@@ -1,43 +1,43 @@
 -- Clear all tables and reset sequences
 TRUNCATE TABLE AlerteFraude, OperationCarte, Carte, Client RESTART IDENTITY CASCADE;
 
-CREATE TABLE Client (
+CREATE TABLE client (
                         id SERIAL PRIMARY KEY,
                         nom VARCHAR(100),
                         email VARCHAR(100),
                         telephone VARCHAR(20)
 );
 
-CREATE TABLE Carte (
+CREATE TABLE carte (
                        id SERIAL PRIMARY KEY,
                        numero VARCHAR(20) UNIQUE,
                        dateExpiration DATE,
                        statut VARCHAR(20),
                        typeCarte VARCHAR(20),
                        idClient INT,
-                       FOREIGN KEY (idClient) REFERENCES Client(id)
+                       FOREIGN KEY (idClient) REFERENCES client(id)
 );
 
-CREATE TABLE OperationCarte (
+CREATE TABLE operationCarte (
                                 id SERIAL PRIMARY KEY,
                                 date TIMESTAMP,
                                 montant DECIMAL(10,2),
                                 type VARCHAR(20),
                                 lieu VARCHAR(100),
                                 idCarte INT,
-                                FOREIGN KEY (idCarte) REFERENCES Carte(id)
+                                FOREIGN KEY (idCarte) REFERENCES carte(id)
 );
 
-CREATE TABLE AlerteFraude (
+CREATE TABLE alertefraude (
                               id SERIAL PRIMARY KEY,
                               description VARCHAR(255),
                               niveau VARCHAR(20),
                               idCarte INT,
-                              FOREIGN KEY (idCarte) REFERENCES Carte(id)
+                              FOREIGN KEY (idCarte) REFERENCES carte(id)
 );
 
 -- Insert 10 clients
-INSERT INTO Client (nom, email, telephone) VALUES
+INSERT INTO client (nom, email, telephone) VALUES
 ('Alice Martin', 'alice.martin@email.com', '0601010101'),
 ('Bob Dupont', 'bob.dupont@email.com', '0602020202'),
 ('Carla Moreau', 'carla.moreau@email.com', '0603030303'),
@@ -50,7 +50,7 @@ INSERT INTO Client (nom, email, telephone) VALUES
 ('Julien Faure', 'julien.faure@email.com', '0610101010');
 
 -- Insert 10 cards (each linked to a client) with explicit id values
-INSERT INTO Carte (id, numero, dateExpiration, statut, typeCarte, idClient) VALUES
+INSERT INTO carte (id, numero, dateExpiration, statut, typeCarte, idClient) VALUES
 (1, '400000000001', '2027-09-30', 'ACTIVE', 'DEBIT', 1),
 (2, '400000000002', '2026-12-31', 'ACTIVE', 'CREDIT', 2),
 (3, '400000000003', '2028-03-15', 'SUSPENDUE', 'PREPAYEE', 3),
@@ -63,7 +63,7 @@ INSERT INTO Carte (id, numero, dateExpiration, statut, typeCarte, idClient) VALU
 (10, '400000000010', '2027-04-04', 'ACTIVE', 'DEBIT', 10);
 
 -- Insert 10 operations (each linked to a card)
-INSERT INTO OperationCarte (date, montant, type, lieu, idCarte) VALUES
+INSERT INTO operationCarte (date, montant, type, lieu, idCarte) VALUES
 ('2025-09-30 10:00:00', 120.50, 'ACHAT', 'Paris', 1),
 ('2025-09-30 11:00:00', 50.00, 'RETRAIT', 'Lyon', 2),
 ('2025-09-30 12:00:00', 200.00, 'PAIEMENTENLIGNE', 'Marseille', 3),
@@ -76,7 +76,7 @@ INSERT INTO OperationCarte (date, montant, type, lieu, idCarte) VALUES
 ('2025-09-30 19:00:00', 110.00, 'ACHAT', 'Grenoble', 10);
 
 -- Insert 10 alerts (each linked to a card)
-INSERT INTO AlerteFraude (description, niveau, idCarte) VALUES
+INSERT INTO alertefraude (description, niveau, idCarte) VALUES
 ('Montant élevé détecté', 'CRITIQUE', 1),
 ('Opérations rapprochées dans des lieux différents', 'AVERTISSEMENT', 2),
 ('Dépassement de plafond', 'INFO', 3),
