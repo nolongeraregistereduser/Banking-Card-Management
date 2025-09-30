@@ -4,6 +4,8 @@ import util.DBUtil;
 import java.sql.*;
 import entity.Client;
 import java.util.ArrayList;
+import java.util.List;
+
 
 public class ClientDAO {
 
@@ -47,7 +49,7 @@ public class ClientDAO {
     }
 
 
-    public deleteClient(int clientId) throws SQLException {
+    public void deleteClient(int clientId) throws SQLException {
         String sql = "DELETE FROM Client WHERE id = ?";
 
         try (Connection connection = DBUtil.getConnection();
