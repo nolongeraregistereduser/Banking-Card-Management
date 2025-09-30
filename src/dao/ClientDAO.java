@@ -3,6 +3,7 @@ package dao;
 import util.DBUtil;
 import java.sql.*;
 import entity.Client;
+import java.util.ArrayList;
 
 public class ClientDAO {
 
@@ -44,4 +45,53 @@ public class ClientDAO {
         }
         return null;
     }
+
+
+    public deleteClient(int clientId) throws SQLException {
+        String sql = "DELETE FROM Client WHERE id = ?";
+
+        try (Connection connection = DBUtil.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(sql)) {
+
+            stmt.setInt(1, clientId);
+            stmt.executeUpdate();
+        }
+    }
+
+    public void updateClient(Client client) throws SQLException {
+        String sql = "UPDATE Client SET nom = ?, email = ?, telephone = ? WHERE id = ?";
+
+        try (Connection connection = DBUtil.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(sql)) {
+
+            stmt.setString(1, client.getNom());
+            stmt.setString(2, client.getEmail());
+            stmt.setString(3, client.getPhone());
+            stmt.setInt(4, client.getId());
+
+            stmt.executeUpdate();
+        }
+    }
+
+
+    public List<Client> getAllClients() throws SQLException {
+        String sql = "SELECT * FROM Client";
+        List<Client> clients = new ArrayList<>();
+
+        try (Connection connection = DBUtil.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+
+            while (rs.next()) {
+                int id = rs.getInt("id");
+                String nom = rs.getString("nom");
+                String email = rs.getString("email");
+                String telephone = rs.getString("telephone");
+                clients.add(new Client(id, nom, email, telephone));
+            }
+        }
+        return clients;
+    }
+
+
 }
