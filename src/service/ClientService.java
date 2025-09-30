@@ -3,7 +3,10 @@ package service;
 import dao.ClientDAO;
 
 import java.sql.SQLException;
+import java.util.List;
+
 import entity.Client;
+
 
 
 
@@ -35,7 +38,7 @@ public class ClientService {
         return clientDAO.getClientById(clientId);
     }
 
-    public void removeClient(int clientId) throws sql.SQLException {
+    public void removeClient(int clientId) throws SQLException {
         if (clientId <= 0) {
             throw new IllegalArgumentException("Client ID doit etre positive.");
         }
