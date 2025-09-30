@@ -46,6 +46,20 @@ public class ClientService {
         System.out.println("Client supprimée avec succes.");
     }
 
+    public void updateClient(Client client) throws SQLException {
+        if (client == null) {
+            throw new IllegalArgumentException("Client cannot be null.");
+        }
+        if (client.getId() <= 0) {
+            throw new IllegalArgumentException("Client ID doit etre positive.");
+        }
+        if (client.getNom() == null || client.getNom().trim().isEmpty()) {
+            throw new IllegalArgumentException("Client name is required.");
+        }
+        clientDAO.updateClient(client);
+        System.out.println("Client mis à jour avec succès.");
+    }
+
 
 
     public List<Client> getAllClients() throws SQLException {
