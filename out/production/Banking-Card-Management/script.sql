@@ -5,7 +5,8 @@ CREATE TABLE client (
                         id SERIAL PRIMARY KEY,
                         nom VARCHAR(100),
                         email VARCHAR(100),
-                        telephone VARCHAR(20)
+                        telephone VARCHAR(20),
+                        password VARCHAR(255) NOT NULL
 );
 
 CREATE TABLE carte (
@@ -36,18 +37,18 @@ CREATE TABLE alertefraude (
                               FOREIGN KEY (idCarte) REFERENCES carte(id)
 );
 
--- Insert 10 clients
-INSERT INTO client (nom, email, telephone) VALUES
-('Alice Martin', 'alice.martin@email.com', '0601010101'),
-('Bob Dupont', 'bob.dupont@email.com', '0602020202'),
-('Carla Moreau', 'carla.moreau@email.com', '0603030303'),
-('David Leroy', 'david.leroy@email.com', '0604040404'),
-('Emma Petit', 'emma.petit@email.com', '0605050505'),
-('Fabrice Noel', 'fabrice.noel@email.com', '0606060606'),
-('Gina Rousseau', 'gina.rousseau@email.com', '0607070707'),
-('Hugo Bernard', 'hugo.bernard@email.com', '0608080808'),
-('Ines Dubois', 'ines.dubois@email.com', '0609090909'),
-('Julien Faure', 'julien.faure@email.com', '0610101010');
+-- Insert 10 clients with password '123456'
+INSERT INTO client (nom, email, telephone, password) VALUES
+('Alice Martin', 'alice.martin@email.com', '0601010101', '123456'),
+('Bob Dupont', 'bob.dupont@email.com', '0602020202', '123456'),
+('Carla Moreau', 'carla.moreau@email.com', '0603030303', '123456'),
+('David Leroy', 'david.leroy@email.com', '0604040404', '123456'),
+('Emma Petit', 'emma.petit@email.com', '0605050505', '123456'),
+('Fabrice Noel', 'fabrice.noel@email.com', '0606060606', '123456'),
+('Gina Rousseau', 'gina.rousseau@email.com', '0607070707', '123456'),
+('Hugo Bernard', 'hugo.bernard@email.com', '0608080808', '123456'),
+('Ines Dubois', 'ines.dubois@email.com', '0609090909', '123456'),
+('Julien Faure', 'julien.faure@email.com', '0610101010', '123456');
 
 -- Insert 10 cards (each linked to a client) with explicit id values
 INSERT INTO carte (id, numero, dateExpiration, statut, typeCarte, idClient) VALUES
