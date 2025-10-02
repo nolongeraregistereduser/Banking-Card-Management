@@ -26,6 +26,9 @@ public class ClientService {
         if (client.getNom() == null || client.getNom().trim().isEmpty()) {
             throw new IllegalArgumentException("Client name is required.");
         }
+        if (client.getPassword() == null || client.getPassword().trim().isEmpty()) {
+            throw new IllegalArgumentException("Password is required.");
+        }
         clientDAO.createClient(client);
         System.out.println("Client Ajoutée avec succes.");
     }
@@ -50,20 +53,44 @@ public class ClientService {
         if (client == null) {
             throw new IllegalArgumentException("Client cannot be null.");
         }
-        if (client.getId() <= 0) {
-            throw new IllegalArgumentException("Client ID doit etre positive.");
-        }
         if (client.getNom() == null || client.getNom().trim().isEmpty()) {
             throw new IllegalArgumentException("Client name is required.");
         }
+        if (client.getPassword() == null || client.getPassword().trim().isEmpty()) {
+            throw new IllegalArgumentException("Password is required.");
+        }
         clientDAO.updateClient(client);
-        System.out.println("Client mis à jour avec succès.");
+        System.out.println("Client mis à jour avec succes.");
     }
-
-
 
     public List<Client> getAllClients() throws SQLException {
         return clientDAO.getAllClients();
+    }
+
+    public Client findClientByEmail(String email) throws SQLException {
+        if (email == null || email.trim().isEmpty()) {
+            throw new IllegalArgumentException("Email is required.");
+        }
+        for (Client c : clientDAO.getAllClients()) {
+            if (c.getEmail().equalsIgnoreCase(email)) {
+                return c;
+            }
+        }
+        return null;
+    }
+
+    public Client login(String email, String password) throws SQLException {
+        if (email == null || email.trim().isEmpty()) {
+            throw new IllegalArgumentException("Email is required.");
+        }
+        if (password == null || password.trim().isEmpty()) {
+            throw new IllegalArgumentException("Password is required.");
+        }
+        Client client = clientDAO.getClientByEmailAndPassword(email, password);
+        if (client == null) {
+            throw new IllegalArgumentException("Invalid email or password.");
+        }
+        return client;
     }
 
     public void displayAllClients() throws SQLException {

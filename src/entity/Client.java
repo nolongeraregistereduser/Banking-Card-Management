@@ -1,6 +1,6 @@
 package entity;
 
-public record Client(int id, String nom, String email, String telephone) {
+public record Client(int id, String nom, String email, String telephone, String password) {
     public String getNom() {
         return nom;
     }
@@ -9,7 +9,7 @@ public record Client(int id, String nom, String email, String telephone) {
         return id;
     }
 
-    public  String getEmail() {
+    public String getEmail() {
         return email;
     }
 
@@ -17,7 +17,7 @@ public record Client(int id, String nom, String email, String telephone) {
         return telephone;
     }
 
-
+    public String getPassword() {
+        return password;
+    }
 }
-
-

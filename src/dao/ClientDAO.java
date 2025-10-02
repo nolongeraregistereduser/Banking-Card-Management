@@ -10,7 +10,7 @@ import java.util.List;
 public class ClientDAO {
 
     public void createClient(Client client) throws SQLException {
-        String sql = "INSERT INTO Client (nom, email, telephone) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO Client (nom, email, telephone, password) VALUES (?, ?, ?, ?)";
 
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -18,6 +18,7 @@ public class ClientDAO {
             stmt.setString(1, client.getNom());
             stmt.setString(2, client.getEmail());
             stmt.setString(3, client.getPhone());
+            stmt.setString(4, client.getPassword());
 
             stmt.executeUpdate();
 
@@ -42,58 +43,67 @@ public class ClientDAO {
                 String nom = rs.getString("nom");
                 String email = rs.getString("email");
                 String telephone = rs.getString("telephone");
-                return new Client(id, nom, email, telephone);
+                String password = rs.getString("password");
+                return new Client(id, nom, email, telephone, password);
             }
         }
         return null;
     }
 
-
-    public void deleteClient(int clientId) throws SQLException {
-        String sql = "DELETE FROM Client WHERE id = ?";
-
+    public Client getClientByEmailAndPassword(String email, String password) throws SQLException {
+        String sql = "SELECT * FROM Client WHERE email = ? AND password = ?";
         try (Connection connection = DBUtil.getConnection();
              PreparedStatement stmt = connection.prepareStatement(sql)) {
-
-            stmt.setInt(1, clientId);
-            stmt.executeUpdate();
+            stmt.setString(1, email);
+            stmt.setString(2, password);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                int id = rs.getInt("id");
+                String nom = rs.getString("nom");
+                String telephone = rs.getString("telephone");
+                return new Client(id, nom, email, telephone, password);
+            }
         }
+        return null;
     }
-
-    public void updateClient(Client client) throws SQLException {
-        String sql = "UPDATE Client SET nom = ?, email = ?, telephone = ? WHERE id = ?";
-
-        try (Connection connection = DBUtil.getConnection();
-             PreparedStatement stmt = connection.prepareStatement(sql)) {
-
-            stmt.setString(1, client.getNom());
-            stmt.setString(2, client.getEmail());
-            stmt.setString(3, client.getPhone());
-            stmt.setInt(4, client.getId());
-
-            stmt.executeUpdate();
-        }
-    }
-
 
     public List<Client> getAllClients() throws SQLException {
-        String sql = "SELECT * FROM Client";
         List<Client> clients = new ArrayList<>();
-
+        String sql = "SELECT * FROM Client";
         try (Connection connection = DBUtil.getConnection();
              PreparedStatement stmt = connection.prepareStatement(sql);
              ResultSet rs = stmt.executeQuery()) {
-
             while (rs.next()) {
                 int id = rs.getInt("id");
                 String nom = rs.getString("nom");
                 String email = rs.getString("email");
                 String telephone = rs.getString("telephone");
-                clients.add(new Client(id, nom, email, telephone));
+                String password = rs.getString("password");
+                clients.add(new Client(id, nom, email, telephone, password));
             }
         }
         return clients;
     }
 
+    public void updateClient(Client client) throws SQLException {
+        String sql = "UPDATE Client SET nom = ?, email = ?, telephone = ?, password = ? WHERE id = ?";
+        try (Connection connection = DBUtil.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, client.getNom());
+            stmt.setString(2, client.getEmail());
+            stmt.setString(3, client.getPhone());
+            stmt.setString(4, client.getPassword());
+            stmt.setInt(5, client.getId());
+            stmt.executeUpdate();
+        }
+    }
 
+    public void deleteClient(int clientId) throws SQLException {
+        String sql = "DELETE FROM Client WHERE id = ?";
+        try (Connection connection = DBUtil.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setInt(1, clientId);
+            stmt.executeUpdate();
+        }
+    }
 }
