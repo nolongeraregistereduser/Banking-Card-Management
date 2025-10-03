@@ -17,6 +17,7 @@ public  sealed class Carte permits CarteDebit, CarteCredit, CartePrepayee {
         this.clientId = clientId;
     }
 
+
     public int getId() {
         return id;
     }
