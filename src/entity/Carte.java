@@ -38,6 +38,10 @@ public  sealed class Carte permits CarteDebit, CarteCredit, CartePrepayee {
         return clientId;
     }
 
+    public void setId(int id) {
+        this.id = id;
+    }
+
     public void setStatus(String status) {
         this.status = status;
     }
@@ -50,11 +54,7 @@ public  sealed class Carte permits CarteDebit, CarteCredit, CartePrepayee {
         this.numero = numero;
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public void setClientId(int clientId) {
+        this.clientId = clientId;
     }
-
-
-
-
 }

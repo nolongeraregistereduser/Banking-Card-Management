@@ -5,7 +5,6 @@ import util.DBUtil;
 
 import java.math.BigDecimal;
 import java.sql.*;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -14,9 +13,9 @@ public class CarteDAO {
 
     public void save(Carte carte) throws SQLException {
         String sql = """
-            INSERT INTO Carte (numero, dateExpiration, statut, typeCarte, 
-                             plafondJournalier, plafondMensuel, tauxInteret, 
-                             soldeDisponible, idClient) 
+            INSERT INTO carte (numero, dateexpiration, statut, typecarte, 
+                             plafondjournalier, plafondmensuel, tauxinteret, 
+                             soldedisponible, idclient) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """;
 
@@ -24,8 +23,8 @@ public class CarteDAO {
              PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             stmt.setString(1, carte.getNumero());
-            stmt.setDate(2, Date.valueOf(carte.getDateExpiration()));
-            stmt.setString(3, carte.getStatut().name());
+            stmt.setDate(2, carte.getDateExpiration());
+            stmt.setString(3, carte.getStatus());
             stmt.setString(4, carte.getClass().getSimpleName());
 
             // Set type-specific fields
@@ -46,20 +45,20 @@ public class CarteDAO {
                 stmt.setBigDecimal(8, prepayee.getSoldeDisponible());
             }
 
-            stmt.setLong(9, carte.getIdClient());
+            stmt.setLong(9, carte.getClientId());
 
             stmt.executeUpdate();
 
             try (ResultSet keys = stmt.getGeneratedKeys()) {
                 if (keys.next()) {
-                    carte.setId(keys.getLong(1));
+                    carte.setId((int) keys.getLong(1));
                 }
             }
         }
     }
 
     public Optional<Carte> findById(Long id) throws SQLException {
-        String sql = "SELECT * FROM Carte WHERE id = ?";
+        String sql = "SELECT * FROM carte WHERE id = ?";
 
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -76,7 +75,7 @@ public class CarteDAO {
     }
 
     public List<Carte> findByClientId(Long clientId) throws SQLException {
-        String sql = "SELECT * FROM Carte WHERE idClient = ?";
+        String sql = "SELECT * FROM carte WHERE idclient = ?";
         List<Carte> cartes = new ArrayList<>();
 
         try (Connection conn = DBUtil.getConnection();
@@ -94,7 +93,7 @@ public class CarteDAO {
     }
 
     public List<Carte> findAll() throws SQLException {
-        String sql = "SELECT * FROM Carte";
+        String sql = "SELECT * FROM carte";
         List<Carte> cartes = new ArrayList<>();
 
         try (Connection conn = DBUtil.getConnection();
@@ -110,9 +109,9 @@ public class CarteDAO {
 
     public void update(Carte carte) throws SQLException {
         String sql = """
-            UPDATE Carte SET numero = ?, dateExpiration = ?, statut = ?, 
-                           typeCarte = ?, plafondJournalier = ?, plafondMensuel = ?, 
-                           tauxInteret = ?, soldeDisponible = ?, idClient = ? 
+            UPDATE carte SET numero = ?, dateexpiration = ?, statut = ?, 
+                           typecarte = ?, plafondjournalier = ?, plafondmensuel = ?, 
+                           tauxinteret = ?, soldedisponible = ?, idclient = ? 
             WHERE id = ?
             """;
 
@@ -120,8 +119,8 @@ public class CarteDAO {
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, carte.getNumero());
-            stmt.setDate(2, Date.valueOf(carte.getDateExpiration()));
-            stmt.setString(3, carte.getStatut().name());
+            stmt.setDate(2, carte.getDateExpiration());
+            stmt.setString(3, carte.getStatus());
             stmt.setString(4, carte.getClass().getSimpleName());
 
             // Set type-specific fields
@@ -142,7 +141,7 @@ public class CarteDAO {
                 stmt.setBigDecimal(8, prepayee.getSoldeDisponible());
             }
 
-            stmt.setLong(9, carte.getIdClient());
+            stmt.setLong(9, carte.getClientId());
             stmt.setLong(10, carte.getId());
 
             stmt.executeUpdate();
@@ -150,7 +149,7 @@ public class CarteDAO {
     }
 
     public void delete(Long id) throws SQLException {
-        String sql = "DELETE FROM Carte WHERE id = ?";
+        String sql = "DELETE FROM carte WHERE id = ?";
 
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -160,14 +159,14 @@ public class CarteDAO {
         }
     }
 
-    public List<Carte> findByStatut(StatutCarte statut) throws SQLException {
-        String sql = "SELECT * FROM Carte WHERE statut = ?";
+    public List<Carte> findByStatut(String statut) throws SQLException {
+        String sql = "SELECT * FROM carte WHERE statut = ?";
         List<Carte> cartes = new ArrayList<>();
 
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setString(1, statut.name());
+            stmt.setString(1, statut);
 
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
@@ -179,7 +178,7 @@ public class CarteDAO {
     }
 
     public Optional<Carte> findByNumero(String numero) throws SQLException {
-        String sql = "SELECT * FROM Carte WHERE numero = ?";
+        String sql = "SELECT * FROM carte WHERE numero = ?";
 
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -196,37 +195,48 @@ public class CarteDAO {
     }
 
     private Carte mapResultSetToCarte(ResultSet rs) throws SQLException {
-        String typeCarte = rs.getString("typeCarte");
+        String typeCarte = rs.getString("typecarte");
 
         return switch (typeCarte) {
             case "CarteDebit" -> {
-                CarteDebit carte = new CarteDebit();
-                setCommonFields(carte, rs);
-                carte.setPlafondJournalier(rs.getBigDecimal("plafondJournalier"));
+                BigDecimal plafond = rs.getBigDecimal("plafondjournalier");
+                CarteDebit carte = new CarteDebit(
+                    rs.getInt("id"),
+                    rs.getString("numero"),
+                    rs.getDate("dateexpiration"),
+                    rs.getString("statut"),
+                    rs.getInt("idclient"),
+                    plafond != null ? plafond : BigDecimal.valueOf(1000.0)
+                );
                 yield carte;
             }
             case "CarteCredit" -> {
-                CarteCredit carte = new CarteCredit();
-                setCommonFields(carte, rs);
-                carte.setPlafondMensuel(rs.getBigDecimal("plafondMensuel"));
-                carte.setTauxInteret(rs.getBigDecimal("tauxInteret"));
+                BigDecimal plafondMensuel = rs.getBigDecimal("plafondmensuel");
+                BigDecimal tauxInteret = rs.getBigDecimal("tauxinteret");
+                CarteCredit carte = new CarteCredit(
+                    rs.getInt("id"),
+                    rs.getString("numero"),
+                    rs.getDate("dateexpiration"),
+                    rs.getString("statut"),
+                    rs.getInt("idclient"),
+                    plafondMensuel != null ? plafondMensuel : BigDecimal.valueOf(5000.0),
+                    tauxInteret != null ? tauxInteret : BigDecimal.valueOf(15.0)
+                );
                 yield carte;
             }
             case "CartePrepayee" -> {
-                CartePrepayee carte = new CartePrepayee();
-                setCommonFields(carte, rs);
-                carte.setSoldeDisponible(rs.getBigDecimal("soldeDisponible"));
+                BigDecimal solde = rs.getBigDecimal("soldedisponible");
+                CartePrepayee carte = new CartePrepayee(
+                    rs.getInt("id"),
+                    rs.getString("numero"),
+                    rs.getDate("dateexpiration"),
+                    rs.getString("statut"),
+                    rs.getInt("idclient"),
+                    solde != null ? solde : BigDecimal.valueOf(0.0)
+                );
                 yield carte;
             }
             default -> throw new SQLException("Unknown card type: " + typeCarte);
         };
-    }
-
-    private void setCommonFields(Carte carte, ResultSet rs) throws SQLException {
-        carte.setId(rs.getLong("id"));
-        carte.setNumero(rs.getString("numero"));
-        carte.setDateExpiration(rs.getDate("dateExpiration").toLocalDate());
-        carte.setStatut(StatutCarte.valueOf(rs.getString("statut")));
-        carte.setIdClient(rs.getLong("idClient"));
     }
 }

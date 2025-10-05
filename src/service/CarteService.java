@@ -10,6 +10,11 @@ import java.util.Optional;
 public class CarteService {
     private final CarteDAO carteDAO;
 
+    // Status constants
+    public static final String STATUS_ACTIVE = "ACTIVE";
+    public static final String STATUS_BLOQUEE = "BLOQUEE";
+    public static final String STATUS_SUSPENDUE = "SUSPENDUE";
+
     public CarteService() {
         this.carteDAO = new CarteDAO();
     }
@@ -35,7 +40,7 @@ public class CarteService {
         Optional<Carte> carteOpt = carteDAO.findById(id);
         if (carteOpt.isPresent()) {
             Carte carte = carteOpt.get();
-            carte.setStatut(StatutCarte.ACTIVE);
+            carte.setStatus(STATUS_ACTIVE);
             carteDAO.update(carte);
         }
     }
@@ -44,7 +49,7 @@ public class CarteService {
         Optional<Carte> carteOpt = carteDAO.findById(id);
         if (carteOpt.isPresent()) {
             Carte carte = carteOpt.get();
-            carte.setStatut(StatutCarte.BLOQUEE);
+            carte.setStatus(STATUS_BLOQUEE);
             carteDAO.update(carte);
         }
     }
@@ -53,7 +58,7 @@ public class CarteService {
         Optional<Carte> carteOpt = carteDAO.findById(id);
         if (carteOpt.isPresent()) {
             Carte carte = carteOpt.get();
-            carte.setStatut(StatutCarte.SUSPENDUE);
+            carte.setStatus(STATUS_SUSPENDUE);
             carteDAO.update(carte);
         }
     }
@@ -66,10 +71,9 @@ public class CarteService {
         return carteDAO.findByNumero(numero);
     }
 
-    public List<Carte> trouverCartesParStatut(StatutCarte statut) throws SQLException {
+    public List<Carte> trouverCartesParStatut(String statut) throws SQLException {
         return carteDAO.findByStatut(statut);
     }
 
     // TODO: Add methods for plafond verification and renewal
 }
-
