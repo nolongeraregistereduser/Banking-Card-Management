@@ -17,6 +17,10 @@ public record Client(int id, String nom, String email, String telephone, String 
         return telephone;
     }
 
+    public String getTelephone() {
+        return telephone;
+    }
+
     public String getPassword() {
         return password;
     }
