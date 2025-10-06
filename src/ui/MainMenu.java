@@ -4,6 +4,7 @@ import service.ClientService;
 import service.CarteService;
 import service.OperationService;
 import service.FraudeService;
+import service.RapportService;
 import entity.*;
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -16,6 +17,7 @@ public class MainMenu {
     private final CarteService carteService;
     private final OperationService operationService;
     private final FraudeService fraudeService;
+    private final RapportService rapportService;
     private final Scanner scanner;
 
     public MainMenu() {
@@ -23,6 +25,7 @@ public class MainMenu {
         this.carteService = new CarteService();
         this.operationService = new OperationService();
         this.fraudeService = new FraudeService();
+        this.rapportService = new RapportService();
         this.scanner = new Scanner(System.in);
     }
 
@@ -92,6 +95,7 @@ public class MainMenu {
             System.out.println("5. Historique des opérations");
             System.out.println("6. Voir les alertes de fraude");
             System.out.println("7. Mon profil");
+            System.out.println("8. Voir mes rapports");
             System.out.println("0. Se déconnecter");
             System.out.print("Votre choix: ");
 
@@ -106,6 +110,7 @@ public class MainMenu {
                     case "5" -> showOperationHistory(client);
                     case "6" -> showFraudAlerts(client);
                     case "7" -> showProfile(client);
+                    case "8" -> showReports(client);
                     case "0" -> {
                         System.out.println("Déconnexion réussie. À bientôt!");
                         return;
@@ -390,6 +395,40 @@ public class MainMenu {
         System.out.println("Email: " + client.getEmail());
         System.out.println("Téléphone: " + client.getTelephone());
         System.out.println("ID Client: " + client.getId());
+    }
+
+    private void showReports(Client client) {
+        while (true) {
+            System.out.println("\n=== Mes Rapports Personnels ===");
+            System.out.println("1. Utilisation de mes cartes");
+            System.out.println("2. Mes statistiques par type d'opération");
+            System.out.println("3. Statut de mes cartes");
+            System.out.println("4. Mon rapport complet");
+            System.out.println("0. Retour au menu principal");
+            System.out.print("Votre choix: ");
+
+            String choice = scanner.nextLine();
+
+            try {
+                switch (choice) {
+                    case "1" -> rapportService.afficherMesCartesUtilisation(client.getId());
+                    case "2" -> rapportService.afficherMesStatistiquesParType(client.getId());
+                    case "3" -> rapportService.afficherMesCartesStatut(client.getId());
+                    case "4" -> rapportService.afficherMonRapportComplet(client.getId());
+                    case "0" -> {
+                        return;
+                    }
+                    default -> System.out.println("Choix invalide. Veuillez réessayer.");
+                }
+
+                // Pause to let user read the report
+                System.out.println("\nAppuyez sur Entrée pour continuer...");
+                scanner.nextLine();
+
+            } catch (Exception e) {
+                System.out.println("Erreur lors de la génération du rapport: " + e.getMessage());
+            }
+        }
     }
 
     private String getCardTypeInfo(Carte carte) {
