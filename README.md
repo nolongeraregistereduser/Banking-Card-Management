@@ -308,12 +308,6 @@ Les contributions sont les bienvenues ! Pour contribuer :
 4. Push vers la branche (`git push origin feature/AmazingFeature`)
 5. Ouvrir une Pull Request
 
-## 📞 Support
-
-Pour toute question ou problème :
-- 📧 Email : votre.email@domain.com
-- 🐛 Issues : [GitHub Issues](https://github.com/votre-username/Banking-Card-Management/issues)
-
 ---
 
 ## 🏆 Fonctionnalités Techniques Avancées
