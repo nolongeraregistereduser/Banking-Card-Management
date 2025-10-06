@@ -2,11 +2,9 @@ package ui;
 
 import service.ClientService;
 import service.CarteService;
-import entity.Client;
-import entity.Carte;
-import entity.CarteDebit;
-import entity.CarteCredit;
-import entity.CartePrepayee;
+import service.OperationService;
+import service.FraudeService;
+import entity.*;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.time.LocalDate;
@@ -16,11 +14,15 @@ import java.util.Scanner;
 public class MainMenu {
     private final ClientService clientService;
     private final CarteService carteService;
+    private final OperationService operationService;
+    private final FraudeService fraudeService;
     private final Scanner scanner;
 
     public MainMenu() {
         this.clientService = new ClientService();
         this.carteService = new CarteService();
+        this.operationService = new OperationService();
+        this.fraudeService = new FraudeService();
         this.scanner = new Scanner(System.in);
     }
 
@@ -85,9 +87,11 @@ public class MainMenu {
             System.out.println("\n=== Dashboard Client - " + client.getNom() + " ===");
             System.out.println("1. Voir mes cartes");
             System.out.println("2. Créer une nouvelle carte");
-            System.out.println("3. Gérer une carte");
-            System.out.println("4. Voir les détails d'une carte");
-            System.out.println("5. Mon profil");
+            System.out.println("3. Gérer une carte (bloquer/activer)");
+            System.out.println("4. Effectuer une opération");
+            System.out.println("5. Historique des opérations");
+            System.out.println("6. Voir les alertes de fraude");
+            System.out.println("7. Mon profil");
             System.out.println("0. Se déconnecter");
             System.out.print("Votre choix: ");
 
@@ -98,8 +102,10 @@ public class MainMenu {
                     case "1" -> showMyCards(client);
                     case "2" -> createNewCard(client);
                     case "3" -> manageCard(client);
-                    case "4" -> showCardDetails(client);
-                    case "5" -> showProfile(client);
+                    case "4" -> performOperation(client);
+                    case "5" -> showOperationHistory(client);
+                    case "6" -> showFraudAlerts(client);
+                    case "7" -> showProfile(client);
                     case "0" -> {
                         System.out.println("Déconnexion réussie. À bientôt!");
                         return;
@@ -149,52 +155,54 @@ public class MainMenu {
         String typeChoice = scanner.nextLine();
 
         try {
-            String cardNumber = generateCardNumber();
-            Date expirationDate = Date.valueOf(LocalDate.now().plusYears(3));
+            String numeroGenere = generateCardNumber();
+            Date dateExpiration = Date.valueOf(LocalDate.now().plusYears(3));
 
-            Carte newCard = switch (typeChoice) {
+            Carte nouvelleCarte;
+
+            switch (typeChoice) {
                 case "1" -> {
                     System.out.print("Plafond journalier (défaut 1000€): ");
-                    String plafondInput = scanner.nextLine();
-                    BigDecimal plafond = plafondInput.isEmpty() ?
-                        BigDecimal.valueOf(1000) : new BigDecimal(plafondInput);
-                    yield new CarteDebit(0, cardNumber, expirationDate,
+                    String plafondStr = scanner.nextLine();
+                    BigDecimal plafond = plafondStr.isEmpty() ?
+                        BigDecimal.valueOf(1000) :
+                        new BigDecimal(plafondStr);
+
+                    nouvelleCarte = new CarteDebit(0, numeroGenere, dateExpiration,
                         CarteService.STATUS_ACTIVE, client.getId(), plafond);
                 }
                 case "2" -> {
                     System.out.print("Plafond mensuel (défaut 5000€): ");
-                    String plafondInput = scanner.nextLine();
-                    BigDecimal plafondMensuel = plafondInput.isEmpty() ?
-                        BigDecimal.valueOf(5000) : new BigDecimal(plafondInput);
+                    String plafondStr = scanner.nextLine();
+                    BigDecimal plafondMensuel = plafondStr.isEmpty() ?
+                        BigDecimal.valueOf(5000) :
+                        new BigDecimal(plafondStr);
 
-                    System.out.print("Taux d'intérêt annuel % (défaut 15%): ");
-                    String tauxInput = scanner.nextLine();
-                    BigDecimal taux = tauxInput.isEmpty() ?
-                        BigDecimal.valueOf(15) : new BigDecimal(tauxInput);
+                    System.out.print("Taux d'intérêt % (défaut 15%): ");
+                    String tauxStr = scanner.nextLine();
+                    BigDecimal taux = tauxStr.isEmpty() ?
+                        BigDecimal.valueOf(15) :
+                        new BigDecimal(tauxStr);
 
-                    yield new CarteCredit(0, cardNumber, expirationDate,
+                    nouvelleCarte = new CarteCredit(0, numeroGenere, dateExpiration,
                         CarteService.STATUS_ACTIVE, client.getId(), plafondMensuel, taux);
                 }
                 case "3" -> {
-                    System.out.print("Solde initial (défaut 0€): ");
-                    String soldeInput = scanner.nextLine();
-                    BigDecimal solde = soldeInput.isEmpty() ?
-                        BigDecimal.valueOf(0) : new BigDecimal(soldeInput);
+                    System.out.print("Solde initial: ");
+                    String soldeStr = scanner.nextLine();
+                    BigDecimal solde = new BigDecimal(soldeStr);
 
-                    yield new CartePrepayee(0, cardNumber, expirationDate,
+                    nouvelleCarte = new CartePrepayee(0, numeroGenere, dateExpiration,
                         CarteService.STATUS_ACTIVE, client.getId(), solde);
                 }
                 default -> {
                     System.out.println("Type de carte invalide.");
-                    yield null;
+                    return;
                 }
-            };
-
-            if (newCard != null) {
-                carteService.creerCarte(newCard);
-                System.out.println("Carte créée avec succès!");
-                System.out.println("Numéro de carte: " + cardNumber);
             }
+
+            carteService.creerCarte(nouvelleCarte);
+            System.out.println("Carte créée avec succès! Numéro: " + maskCardNumber(numeroGenere));
 
         } catch (Exception e) {
             System.out.println("Erreur lors de la création de la carte: " + e.getMessage());
@@ -202,162 +210,208 @@ public class MainMenu {
     }
 
     private void manageCard(Client client) {
-        showMyCards(client);
-
-        if (hasNoCards(client)) return;
-
-        System.out.print("\nEntrez l'ID de la carte à gérer: ");
         try {
-            long cardId = Long.parseLong(scanner.nextLine());
+            List<Carte> cartes = carteService.trouverCartesParClient((long) client.getId());
+
+            if (cartes.isEmpty()) {
+                System.out.println("Vous n'avez aucune carte à gérer.");
+                return;
+            }
+
+            System.out.println("\n=== Gestion des Cartes ===");
+            showMyCards(client);
+
+            System.out.print("Entrez l'ID de la carte à gérer: ");
+            int carteId = Integer.parseInt(scanner.nextLine());
 
             // Verify card belongs to client
-            List<Carte> userCards = carteService.trouverCartesParClient((long) client.getId());
-            boolean cardBelongsToUser = userCards.stream()
-                .anyMatch(carte -> carte.getId() == cardId);
-
-            if (!cardBelongsToUser) {
+            boolean carteExists = cartes.stream().anyMatch(c -> c.getId() == carteId);
+            if (!carteExists) {
                 System.out.println("Cette carte ne vous appartient pas.");
                 return;
             }
 
-            System.out.println("\n=== Gestion de la Carte ===");
+            System.out.println("\nActions disponibles:");
             System.out.println("1. Activer la carte");
-            System.out.println("2. Bloquer la carte");
-            System.out.println("3. Suspendre la carte");
-            System.out.println("4. Supprimer la carte");
-            System.out.println("0. Retour");
+            System.out.println("2. Suspendre la carte");
+            System.out.println("3. Bloquer la carte");
             System.out.print("Votre choix: ");
 
             String action = scanner.nextLine();
 
             switch (action) {
                 case "1" -> {
-                    carteService.activerCarte(cardId);
+                    carteService.activerCarte((long) carteId);
                     System.out.println("Carte activée avec succès!");
                 }
                 case "2" -> {
-                    carteService.bloquerCarte(cardId);
-                    System.out.println("Carte bloquée avec succès!");
-                }
-                case "3" -> {
-                    carteService.suspendreCarte(cardId);
+                    carteService.suspendreCarte((long) carteId);
                     System.out.println("Carte suspendue avec succès!");
                 }
-                case "4" -> {
-                    System.out.print("Êtes-vous sûr de vouloir supprimer cette carte? (oui/non): ");
-                    String confirmation = scanner.nextLine();
-                    if ("oui".equalsIgnoreCase(confirmation)) {
-                        carteService.supprimerCarte(cardId);
-                        System.out.println("Carte supprimée avec succès!");
-                    } else {
-                        System.out.println("Suppression annulée.");
-                    }
+                case "3" -> {
+                    carteService.bloquerCarte((long) carteId);
+                    System.out.println("Carte bloquée avec succès!");
                 }
-                case "0" -> System.out.println("Retour au menu principal.");
-                default -> System.out.println("Choix invalide.");
+                default -> System.out.println("Action invalide.");
             }
 
-        } catch (NumberFormatException e) {
-            System.out.println("ID de carte invalide.");
         } catch (Exception e) {
             System.out.println("Erreur lors de la gestion de la carte: " + e.getMessage());
         }
     }
 
-    private void showCardDetails(Client client) {
-        showMyCards(client);
-
-        if (hasNoCards(client)) return;
-
-        System.out.print("\nEntrez l'ID de la carte pour voir les détails: ");
+    private void performOperation(Client client) {
         try {
-            long cardId = Long.parseLong(scanner.nextLine());
+            List<Carte> cartes = carteService.trouverCartesParClient((long) client.getId());
 
-            var carteOpt = carteService.trouverCarteParId(cardId);
-            if (carteOpt.isEmpty()) {
-                System.out.println("Carte non trouvée.");
+            if (cartes.isEmpty()) {
+                System.out.println("Vous n'avez aucune carte pour effectuer des opérations.");
                 return;
             }
 
-            Carte carte = carteOpt.get();
+            System.out.println("\n=== Effectuer une Opération ===");
+            showMyCards(client);
 
-            // Verify card belongs to client
-            if (carte.getClientId() != client.getId()) {
+            System.out.print("Entrez l'ID de la carte: ");
+            int carteId = Integer.parseInt(scanner.nextLine());
+
+            // Verify card belongs to client and is active
+            Carte carte = cartes.stream()
+                .filter(c -> c.getId() == carteId)
+                .findFirst()
+                .orElse(null);
+
+            if (carte == null) {
                 System.out.println("Cette carte ne vous appartient pas.");
                 return;
             }
 
-            System.out.println("\n=== Détails de la Carte ===");
-            System.out.println("ID: " + carte.getId());
-            System.out.println("Numéro: " + carte.getNumero());
-            System.out.println("Type: " + carte.getClass().getSimpleName());
-            System.out.println("Statut: " + carte.getStatus());
-            System.out.println("Date d'expiration: " + carte.getDateExpiration());
-
-            // Show type-specific details
-            if (carte instanceof CarteDebit debit) {
-                System.out.println("Plafond journalier: " + debit.getPlafondJournalier() + "€");
-            } else if (carte instanceof CarteCredit credit) {
-                System.out.println("Plafond mensuel: " + credit.getPlafondMensuel() + "€");
-                System.out.println("Taux d'intérêt: " + credit.getTauxInteret() + "%");
-            } else if (carte instanceof CartePrepayee prepayee) {
-                System.out.println("Solde disponible: " + prepayee.getSoldeDisponible() + "€");
+            if (!"ACTIVE".equals(carte.getStatus())) {
+                System.out.println("Cette carte n'est pas active.");
+                return;
             }
 
-        } catch (NumberFormatException e) {
-            System.out.println("ID de carte invalide.");
+            System.out.println("\nTypes d'opérations:");
+            System.out.println("1. Achat");
+            System.out.println("2. Retrait");
+            System.out.println("3. Paiement en ligne");
+            System.out.print("Type d'opération: ");
+
+            String typeOp = scanner.nextLine();
+
+            System.out.print("Montant: ");
+            double montant = Double.parseDouble(scanner.nextLine());
+
+            System.out.print("Lieu: ");
+            String lieu = scanner.nextLine();
+
+            switch (typeOp) {
+                case "1" -> operationService.effectuerAchat(carteId, montant, lieu);
+                case "2" -> operationService.effectuerRetrait(carteId, montant, lieu);
+                case "3" -> operationService.effectuerPaiementEnLigne(carteId, montant, lieu);
+                default -> {
+                    System.out.println("Type d'opération invalide.");
+                    return;
+                }
+            }
+
+            // Analyze for fraud after operation
+            fraudeService.analyserFraude(carteId);
+
         } catch (Exception e) {
-            System.out.println("Erreur lors de l'affichage des détails: " + e.getMessage());
+            System.out.println("Erreur lors de l'opération: " + e.getMessage());
+        }
+    }
+
+    private void showOperationHistory(Client client) {
+        try {
+            List<Carte> cartes = carteService.trouverCartesParClient((long) client.getId());
+
+            if (cartes.isEmpty()) {
+                System.out.println("Vous n'avez aucune carte.");
+                return;
+            }
+
+            System.out.println("\n=== Historique des Opérations ===");
+
+            for (Carte carte : cartes) {
+                List<OperationCarte> operations = operationService.getOperationsByCard(carte.getId());
+
+                if (!operations.isEmpty()) {
+                    System.out.println("\nCarte " + maskCardNumber(carte.getNumero()) + ":");
+                    for (OperationCarte op : operations) {
+                        System.out.printf("  %s | %.2f€ | %s | %s%n",
+                            op.date(), op.montant(), op.type(), op.lieu());
+                    }
+                }
+            }
+
+        } catch (Exception e) {
+            System.out.println("Erreur lors de la récupération de l'historique: " + e.getMessage());
+        }
+    }
+
+    private void showFraudAlerts(Client client) {
+        try {
+            List<Carte> cartes = carteService.trouverCartesParClient((long) client.getId());
+
+            if (cartes.isEmpty()) {
+                System.out.println("Vous n'avez aucune carte.");
+                return;
+            }
+
+            System.out.println("\n=== Alertes de Fraude ===");
+            boolean hasAlerts = false;
+
+            for (Carte carte : cartes) {
+                List<AlerteFraude> alertes = fraudeService.getAlertesByCard(carte.getId());
+
+                if (!alertes.isEmpty()) {
+                    hasAlerts = true;
+                    System.out.println("\nCarte " + maskCardNumber(carte.getNumero()) + ":");
+                    for (AlerteFraude alerte : alertes) {
+                        System.out.printf("  [%s] %s%n", alerte.niveau(), alerte.description());
+                    }
+                }
+            }
+
+            if (!hasAlerts) {
+                System.out.println("Aucune alerte de fraude pour vos cartes.");
+            }
+
+        } catch (Exception e) {
+            System.out.println("Erreur lors de la récupération des alertes: " + e.getMessage());
         }
     }
 
     private void showProfile(Client client) {
         System.out.println("\n=== Mon Profil ===");
-        System.out.println("ID: " + client.getId());
         System.out.println("Nom: " + client.getNom());
         System.out.println("Email: " + client.getEmail());
         System.out.println("Téléphone: " + client.getTelephone());
-
-        try {
-            List<Carte> cartes = carteService.trouverCartesParClient((long) client.getId());
-            System.out.println("Nombre de cartes: " + cartes.size());
-        } catch (Exception e) {
-            System.out.println("Erreur lors du calcul des cartes: " + e.getMessage());
-        }
-    }
-
-    // Helper methods
-    private String generateCardNumber() {
-        return "4000" + String.format("%012d", System.currentTimeMillis() % 1000000000000L);
-    }
-
-    private String maskCardNumber(String cardNumber) {
-        if (cardNumber.length() < 4) return cardNumber;
-        return "**** **** **** " + cardNumber.substring(cardNumber.length() - 4);
+        System.out.println("ID Client: " + client.getId());
     }
 
     private String getCardTypeInfo(Carte carte) {
         if (carte instanceof CarteDebit debit) {
             return " | Plafond: " + debit.getPlafondJournalier() + "€/jour";
         } else if (carte instanceof CarteCredit credit) {
-            return " | Plafond: " + credit.getPlafondMensuel() + "€/mois";
+            return " | Plafond: " + credit.getPlafondMensuel() + "€/mois | Taux: " + credit.getTauxInteret() + "%";
         } else if (carte instanceof CartePrepayee prepayee) {
             return " | Solde: " + prepayee.getSoldeDisponible() + "€";
         }
         return "";
     }
 
-    private boolean hasNoCards(Client client) {
-        try {
-            List<Carte> cartes = carteService.trouverCartesParClient((long) client.getId());
-            if (cartes.isEmpty()) {
-                System.out.println("Vous n'avez aucune carte pour le moment.");
-                return true;
-            }
-            return false;
-        } catch (Exception e) {
-            System.out.println("Erreur lors de la vérification des cartes: " + e.getMessage());
-            return true;
+    private String maskCardNumber(String numero) {
+        if (numero.length() >= 8) {
+            return numero.substring(0, 4) + "****" + numero.substring(numero.length() - 4);
         }
+        return numero;
+    }
+
+    private String generateCardNumber() {
+        // Simple card number generation (in real app, this would be more sophisticated)
+        return "4000" + String.format("%012d", (long) (Math.random() * 1000000000000L));
     }
 }

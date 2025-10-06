@@ -17,7 +17,7 @@ public class ClientDAO {
 
             stmt.setString(1, client.getNom());
             stmt.setString(2, client.getEmail());
-            stmt.setString(3, client.getPhone());
+            stmt.setString(3, client.getTelephone()); // Fixed: was getPhone()
             stmt.setString(4, client.getPassword());
 
             stmt.executeUpdate();
@@ -91,7 +91,7 @@ public class ClientDAO {
              PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, client.getNom());
             stmt.setString(2, client.getEmail());
-            stmt.setString(3, client.getPhone());
+            stmt.setString(3, client.getTelephone()); // Fixed: was getPhone()
             stmt.setString(4, client.getPassword());
             stmt.setInt(5, client.getId());
             stmt.executeUpdate();

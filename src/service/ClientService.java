@@ -86,9 +86,10 @@ public class ClientService {
         if (password == null || password.trim().isEmpty()) {
             throw new IllegalArgumentException("Password is required.");
         }
+
         Client client = clientDAO.getClientByEmailAndPassword(email, password);
         if (client == null) {
-            throw new IllegalArgumentException("Invalid email or password.");
+            throw new SQLException("Invalid email or password.");
         }
         return client;
     }
