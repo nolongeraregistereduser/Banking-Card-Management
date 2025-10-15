@@ -63,8 +63,11 @@ public class CarteService implements BaseService<Carte, Integer> {
             }
         } else if (carte instanceof CartePrepayee prepayee && prepayee.getSoldeDisponible() == null) {
             prepayee.setSoldeDisponible(DEFAULT_SOLDE_PREPAYEE);
+
         }
     }
+
+    // adding
 
     @Override
     public void add(Carte carte) throws SQLException {
@@ -256,4 +259,10 @@ public class CarteService implements BaseService<Carte, Integer> {
         carteDAO.update(carte);
         System.out.println("Carte renouvelée avec succès.");
     }
+
+    public void sayHello() {
+        System.out.println("Hello from CarteService");
+    }
+
+
 }
