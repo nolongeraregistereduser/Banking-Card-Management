@@ -9,8 +9,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class CarteDAO {
 
+public class CarteDAO implements BaseDAO<Carte, Integer> {
+
+    @Override
     public void save(Carte carte) throws SQLException {
         String sql = """
             INSERT INTO carte (numero, dateexpiration, statut, typecarte, 
@@ -57,13 +59,14 @@ public class CarteDAO {
         }
     }
 
-    public Optional<Carte> findById(Long id) throws SQLException {
+    @Override
+    public Optional<Carte> findById(Integer id) throws SQLException {
         String sql = "SELECT * FROM carte WHERE id = ?";
 
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setLong(1, id);
+            stmt.setInt(1, id);
 
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
@@ -74,24 +77,7 @@ public class CarteDAO {
         return Optional.empty();
     }
 
-    public List<Carte> findByClientId(Long clientId) throws SQLException {
-        String sql = "SELECT * FROM carte WHERE idclient = ?";
-        List<Carte> cartes = new ArrayList<>();
-
-        try (Connection conn = DBUtil.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setLong(1, clientId);
-
-            try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) {
-                    cartes.add(mapResultSetToCarte(rs));
-                }
-            }
-        }
-        return cartes;
-    }
-
+    @Override
     public List<Carte> findAll() throws SQLException {
         String sql = "SELECT * FROM carte";
         List<Carte> cartes = new ArrayList<>();
@@ -107,6 +93,7 @@ public class CarteDAO {
         return cartes;
     }
 
+    @Override
     public void update(Carte carte) throws SQLException {
         String sql = """
             UPDATE carte SET numero = ?, dateexpiration = ?, statut = ?, 
@@ -148,15 +135,35 @@ public class CarteDAO {
         }
     }
 
-    public void delete(Long id) throws SQLException {
+    @Override
+    public void delete(Integer id) throws SQLException {
         String sql = "DELETE FROM carte WHERE id = ?";
 
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setLong(1, id);
+            stmt.setInt(1, id);
             stmt.executeUpdate();
         }
+    }
+
+    // Specific query methods (not CRUD)
+    public List<Carte> findByClientId(Integer clientId) throws SQLException {
+        String sql = "SELECT * FROM carte WHERE idclient = ?";
+        List<Carte> cartes = new ArrayList<>();
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, clientId);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    cartes.add(mapResultSetToCarte(rs));
+                }
+            }
+        }
+        return cartes;
     }
 
     public List<Carte> findByStatut(String statut) throws SQLException {
@@ -194,6 +201,7 @@ public class CarteDAO {
         return Optional.empty();
     }
 
+    // Helper method to map ResultSet to Carte
     private Carte mapResultSetToCarte(ResultSet rs) throws SQLException {
         String typeCarte = rs.getString("typecarte");
 

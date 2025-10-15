@@ -27,7 +27,7 @@ public class OperationService {
 
     public void enregistrerOperation(int carteId, double montant, String type, String lieu) throws SQLException {
         // Verify card exists and is active
-        Optional<Carte> carteOpt = carteDAO.findById((long) carteId);
+        Optional<Carte> carteOpt = carteDAO.findById(carteId);
         if (carteOpt.isEmpty()) {
             throw new SQLException("Carte not found with ID: " + carteId);
         }

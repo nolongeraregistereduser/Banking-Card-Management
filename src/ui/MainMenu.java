@@ -61,7 +61,7 @@ public class MainMenu {
             System.out.print("Mot de passe: ");
             String password = scanner.nextLine();
             Client client = new Client(0, nom, email, telephone, password);
-            clientService.addClient(client);
+            clientService.add(client);
         } catch (Exception e) {
             System.out.println("Erreur lors de l'inscription: " + e.getMessage());
         }
@@ -125,7 +125,7 @@ public class MainMenu {
 
     private void showMyCards(Client client) {
         try {
-            List<Carte> cartes = carteService.trouverCartesParClient((long) client.getId());
+            List<Carte> cartes = carteService.findByClientId(client.getId());
 
             if (cartes.isEmpty()) {
                 System.out.println("\nVous n'avez aucune carte pour le moment.");
@@ -206,7 +206,7 @@ public class MainMenu {
                 }
             }
 
-            carteService.creerCarte(nouvelleCarte);
+            carteService.add(nouvelleCarte);
             System.out.println("Carte créée avec succès! Numéro: " + maskCardNumber(numeroGenere));
 
         } catch (Exception e) {
@@ -216,7 +216,7 @@ public class MainMenu {
 
     private void manageCard(Client client) {
         try {
-            List<Carte> cartes = carteService.trouverCartesParClient((long) client.getId());
+            List<Carte> cartes = carteService.findByClientId(client.getId());
 
             if (cartes.isEmpty()) {
                 System.out.println("Vous n'avez aucune carte à gérer.");
@@ -246,15 +246,15 @@ public class MainMenu {
 
             switch (action) {
                 case "1" -> {
-                    carteService.activerCarte((long) carteId);
+                    carteService.activerCarte(carteId);
                     System.out.println("Carte activée avec succès!");
                 }
                 case "2" -> {
-                    carteService.suspendreCarte((long) carteId);
+                    carteService.suspendreCarte(carteId);
                     System.out.println("Carte suspendue avec succès!");
                 }
                 case "3" -> {
-                    carteService.bloquerCarte((long) carteId);
+                    carteService.bloquerCarte(carteId);
                     System.out.println("Carte bloquée avec succès!");
                 }
                 default -> System.out.println("Action invalide.");
@@ -267,7 +267,7 @@ public class MainMenu {
 
     private void performOperation(Client client) {
         try {
-            List<Carte> cartes = carteService.trouverCartesParClient((long) client.getId());
+            List<Carte> cartes = carteService.findByClientId(client.getId());
 
             if (cartes.isEmpty()) {
                 System.out.println("Vous n'avez aucune carte pour effectuer des opérations.");
@@ -330,7 +330,7 @@ public class MainMenu {
 
     private void showOperationHistory(Client client) {
         try {
-            List<Carte> cartes = carteService.trouverCartesParClient((long) client.getId());
+            List<Carte> cartes = carteService.findByClientId(client.getId());
 
             if (cartes.isEmpty()) {
                 System.out.println("Vous n'avez aucune carte.");
@@ -358,7 +358,7 @@ public class MainMenu {
 
     private void showFraudAlerts(Client client) {
         try {
-            List<Carte> cartes = carteService.trouverCartesParClient((long) client.getId());
+            List<Carte> cartes = carteService.findByClientId(client.getId());
 
             if (cartes.isEmpty()) {
                 System.out.println("Vous n'avez aucune carte.");

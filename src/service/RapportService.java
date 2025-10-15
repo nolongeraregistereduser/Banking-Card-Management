@@ -34,7 +34,7 @@ public class RapportService {
                 .limit(5)
                 .forEach(entry -> {
                     try {
-                        Carte carte = carteDAO.findById((long) entry.getKey()).orElse(null);
+                        Carte carte = carteDAO.findById(entry.getKey()).orElse(null);
                         String numeroMasque = carte != null ?
                             carte.getNumero().substring(0, 4) + "****" +
                             carte.getNumero().substring(carte.getNumero().length() - 4) :
@@ -126,7 +126,7 @@ public class RapportService {
     public void afficherMesCartesUtilisation(int clientId) throws SQLException {
         System.out.println("\n=== UTILISATION DE MES CARTES ===");
 
-        List<Carte> mesCartes = carteDAO.findByClientId((long) clientId);
+        List<Carte> mesCartes = carteDAO.findByClientId(clientId);
         List<OperationCarte> operations = operationDAO.findAll();
 
         Map<Integer, Long> utilisationMesCartes = operations.stream()
@@ -145,7 +145,7 @@ public class RapportService {
                 .sorted(Map.Entry.<Integer, Long>comparingByValue().reversed())
                 .forEach(entry -> {
                     try {
-                        Carte carte = carteDAO.findById((long) entry.getKey()).orElse(null);
+                        Carte carte = carteDAO.findById(entry.getKey()).orElse(null);
                         String numeroMasque = carte != null ?
                             carte.getNumero().substring(0, 4) + "****" +
                             carte.getNumero().substring(carte.getNumero().length() - 4) :
@@ -160,7 +160,7 @@ public class RapportService {
     public void afficherMesStatistiquesParType(int clientId) throws SQLException {
         System.out.println("\n=== MES STATISTIQUES PAR TYPE D'OPÉRATION ===");
 
-        List<Carte> mesCartes = carteDAO.findByClientId((long) clientId);
+        List<Carte> mesCartes = carteDAO.findByClientId(clientId);
         List<OperationCarte> mesOperations = operationDAO.findAll().stream()
                 .filter(op -> mesCartes.stream().anyMatch(carte -> carte.getId() == op.idCarte()))
                 .collect(Collectors.toList());
@@ -191,7 +191,7 @@ public class RapportService {
     public void afficherMesCartesStatut(int clientId) throws SQLException {
         System.out.println("\n=== STATUT DE MES CARTES ===");
 
-        List<Carte> mesCartes = carteDAO.findByClientId((long) clientId);
+        List<Carte> mesCartes = carteDAO.findByClientId(clientId);
 
         if (mesCartes.isEmpty()) {
             System.out.println("Vous n'avez aucune carte.");
@@ -222,7 +222,7 @@ public class RapportService {
         System.out.println("=".repeat(50));
 
         // Mes cartes par type
-        List<Carte> mesCartes = carteDAO.findByClientId((long) clientId);
+        List<Carte> mesCartes = carteDAO.findByClientId(clientId);
 
         if (mesCartes.isEmpty()) {
             System.out.println("Vous n'avez aucune carte.");

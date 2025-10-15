@@ -89,7 +89,7 @@ public class FraudeService {
 
     private void suspendreCarteAutomatiquement(int carteId) throws SQLException {
         CarteService carteService = new CarteService();
-        carteService.suspendreCarte((long) carteId);
+        carteService.suspendreCarte(carteId);
         System.out.println("Carte automatiquement suspendue pour suspicion de fraude");
     }
 
